@@ -8,6 +8,11 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import requests
+from dotenv import load_dotenv
+
+# Load .env so FOOTBALL_API_KEY is available to any entrypoint using this client
+# (the FastAPI server, the scraper, or standalone runs).
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
