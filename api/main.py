@@ -19,6 +19,7 @@ sys.path.insert(0, '/Users/annie/Documents/All_Projects/FIFA_Data_Project')
 from processing.sentiment_analyzer import SentimentAnalyzer
 from ml.predictor import WinPredictor
 from api.cache import CacheManager, MatchCache
+from ingestion.football_data import FootballDataClient, FootballDataError
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,6 +69,52 @@ except Exception as e:
     logger.error(f"❌ Cache Manager error: {e}")
     cache = None
     match_cache = None
+
+
+from datetime import timezone
+
+LASTGOOD_TTL = 7 * 24 * 3600  # 1 week
+
+# WC data provider (reads FOOTBALL_API_KEY from env; safe if key missing)
+try:
+    football = FootballDataClient()
+    logger.info("✅ Football data client loaded")
+except Exception as e:  # pragma: no cover
+    logger.error(f"❌ Football data client error: {e}")
+    football = None
+
+
+def cached(cache, key, ttl, fetch_fn):
+    """Return (data, source). Raises FootballDataError only on miss with no last-good."""
+    if cache is not None:
+        hit = cache.get(key)
+        if hit is not None:
+            return hit, "cache"
+    try:
+        fresh = fetch_fn()
+        if cache is not None:
+            cache.set(key, fresh, ttl)
+            cache.set(f"{key}:lastgood", fresh, LASTGOOD_TTL)
+        return fresh, "live"
+    except FootballDataError:
+        if cache is not None:
+            lg = cache.get(f"{key}:lastgood")
+            if lg is not None:
+                return lg, "cache"
+        raise
+
+
+def envelope(cache, key, ttl, fetch_fn, mock):
+    """Never raises. Wraps cached() with a labeled-mock fallback."""
+    try:
+        data, source = cached(cache, key, ttl, fetch_fn)
+    except FootballDataError:
+        data, source = mock, "mock"
+    return {
+        "source": source,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "data": data,
+    }
 
 
 # ============================================================================
