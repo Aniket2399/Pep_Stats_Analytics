@@ -1,6 +1,0 @@
-{
-  "scorers": [
-    {"player": {"name": "Kylian Mbappe", "nationality": "France"}, "team": {"name": "France"}, "goals": 5, "assists": 2},
-    {"player": {"name": "Lionel Messi", "nationality": "Argentina"}, "team": {"name": "Argentina"}, "goals": 4, "assists": 1}
-  ]
-}
