@@ -7,7 +7,7 @@ from .db import table_exists
 _TABLES = ["player_season", "team_season", "shots", "live_matches", "fixtures", "standings"]
 
 def _clean(v):
-    if isinstance(v, float) and math.isnan(v):
+    if isinstance(v, float) and not math.isfinite(v):
         return None
     return v
 

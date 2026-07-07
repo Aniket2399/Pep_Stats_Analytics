@@ -52,3 +52,11 @@ def test_table_counts():
     con = _con()
     counts = q.table_counts(con)
     assert counts["player_season"] == 3 and counts["team_season"] == 2
+
+def test_clean_handles_nan_and_inf():
+    from apex.api import queries
+    assert queries._clean(float("nan")) is None
+    assert queries._clean(float("inf")) is None
+    assert queries._clean(float("-inf")) is None
+    assert queries._clean(1.5) == 1.5
+    assert queries._clean("x") == "x"

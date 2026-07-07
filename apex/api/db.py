@@ -16,7 +16,7 @@ def get_connection():
 
 def table_exists(con, name: str) -> bool:
     row = con.execute(
-        "SELECT 1 FROM information_schema.tables WHERE table_name = ?", [name]
+        "SELECT 1 FROM information_schema.tables WHERE table_name = ? AND table_schema = 'main'", [name]
     ).fetchone()
     return row is not None
 
