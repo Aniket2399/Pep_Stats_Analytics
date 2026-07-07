@@ -39,3 +39,23 @@ def test_serve_empty_leaves_existing_tables(tmp_path, monkeypatch):
     assert res["source"] == "unavailable"
     con = duckdb.connect(str(config.DUCKDB_PATH))
     assert con.execute("select count(*) from live_matches").fetchone()[0] == 1    # untouched
+
+def test_serve_unparseable_matches_leave_tables_intact(tmp_path, monkeypatch):
+    _paths(tmp_path, monkeypatch)
+    # prime all three tables with 1 row each
+    con = duckdb.connect(str(config.DUCKDB_PATH))
+    con.execute("create table live_matches as select 1 as id")
+    con.execute("create table fixtures as select 1 as id")
+    con.execute("create table standings as select 1 as id")
+    con.close()
+
+    class StubClient:
+        def get_wc_matches(self): return [{"id": 1}]  # missing status/homeTeam -> fails normalize
+
+    res = sv.serve(StubClient(), now_ts=1000)
+    assert res["live"] == 0 and res["fixtures"] == 0 and res["standings"] == 0
+
+    con = duckdb.connect(str(config.DUCKDB_PATH))
+    assert con.execute("select count(*) from live_matches").fetchone()[0] == 1     # untouched
+    assert con.execute("select count(*) from fixtures").fetchone()[0] == 1         # untouched
+    assert con.execute("select count(*) from standings").fetchone()[0] == 1        # untouched

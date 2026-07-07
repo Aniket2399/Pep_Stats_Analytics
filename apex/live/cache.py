@@ -14,7 +14,10 @@ def _write(path, data):
 def get_matches_cached(client, ttl, now_ts) -> tuple:
     raw = config.RAW_SNAPSHOT
     if raw.exists() and (now_ts - os.path.getmtime(raw)) < ttl:
-        return json.loads(raw.read_text()), "cache"
+        try:
+            return json.loads(raw.read_text()), "cache"
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("corrupt raw snapshot %s: %s; falling back to scrape", raw, e)
     try:
         data = client.get_wc_matches()
     except LiveDataError as e:

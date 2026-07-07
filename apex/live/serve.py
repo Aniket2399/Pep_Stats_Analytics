@@ -26,6 +26,10 @@ def serve(client, now_ts) -> dict:
         except Exception as e:  # skip a malformed dict, keep going
             logger.warning("skipping malformed match dict %s: %s", md.get("id"), e)
 
+    if not matches:
+        logger.warning("no matches normalized (source=%s); leaving existing tables intact", source)
+        return {"source": source, "live": 0, "fixtures": 0, "standings": 0}
+
     live = pd.DataFrame(derive_live(matches, now_ts), columns=_LIVE_COLS)
     fixtures = pd.DataFrame(derive_fixtures(matches), columns=_FIX_COLS)
     standings = pd.DataFrame(derive_standings(matches), columns=_STAND_COLS)
@@ -40,6 +44,8 @@ def serve(client, now_ts) -> dict:
     config.DUCKDB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(config.DUCKDB_PATH))
     try:
+        # NOTE: "group" is a DuckDB reserved word (standings.group column) -
+        # consumers must quote it as "group" in SQL.
         for name, df in [("live_matches", live), ("fixtures", fixtures), ("standings", standings)]:
             con.register("df_tmp", df)
             con.execute(f"CREATE OR REPLACE TABLE {name} AS SELECT * FROM df_tmp")
