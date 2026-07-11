@@ -1,5 +1,7 @@
 # PepStats — Football Analytics
 
+[![CI](https://github.com/Aniket2399/Pep_Stats_Analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/Aniket2399/Pep_Stats_Analytics/actions/workflows/ci.yml)
+
 A football analytics dashboard covering a **historic La Liga season** (StatsBomb
 open data) and the **World Cup 2026** (live speed layer), built on a
 Lambda-architecture backend and a React frontend that reproduces a dark,
@@ -121,7 +123,12 @@ Fly.io, etc. — `docker build -t pepstats-api . && docker run -p 8000:8000 peps
 ## CI
 
 Every push / PR to `main` runs the frontend test suite and a production build
-via GitHub Actions (`.github/workflows/ci.yml`).
+via GitHub Actions (`.github/workflows/ci.yml`) — status shown by the badge at
+the top.
+
+Once the repo is connected to Vercel, every pull request also gets an automatic
+**preview deployment** with its own URL, and merges to `main` deploy to
+production — so you can review UI changes live before they ship.
 
 ## Tech
 
