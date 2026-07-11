@@ -92,17 +92,31 @@ pytest                      # backend
 
 ## Deploy
 
-The frontend is a static build:
+The repo ships everything needed to deploy both halves — the API's 3.3 MB
+serving DB (`data/serving/apex.duckdb`) is committed, so the backend is
+self-contained.
 
-```bash
-cd frontend
-VITE_API_URL=https://your-api.example.com npm run build   # → frontend/dist/
-```
+### API → Render (Docker)
 
-Host `frontend/dist/` on any static host (Netlify, Vercel, GitHub Pages, S3),
-and point it at your deployed serving API with `VITE_API_URL` at build time.
-The FastAPI service (`uvicorn apex.api.app:app`) runs anywhere `apex.duckdb` is
-present — it's read-only and CORS-open.
+1. In [Render](https://render.com): **New → Blueprint**, pick this repo — it
+   reads [`render.yaml`](render.yaml) and builds the [`Dockerfile`](Dockerfile)
+   (a slim image: `apex/` + the serving DB, via `requirements-api.txt`).
+2. Deploy → you get `https://pepstats-api.onrender.com` (health check: `/health`).
+
+The service is read-only and CORS-open. (Any Docker host works — Railway,
+Fly.io, etc. — `docker build -t pepstats-api . && docker run -p 8000:8000 pepstats-api`.)
+
+### Frontend → Vercel
+
+1. In [Vercel](https://vercel.com): **Add New → Project**, import this repo.
+2. Set **Root Directory → `frontend`** (the app lives in a subfolder; this also
+   stops Vercel building the Python backend). Framework auto-detects as **Vite**
+   (see [`frontend/vercel.json`](frontend/vercel.json)).
+3. Add an env var **`VITE_API_URL`** = your Render API URL, then **Deploy**.
+
+> Vite bakes env vars at build time, so change `VITE_API_URL` → redeploy. If you
+> skip it, the Historic tabs still work from bundled cached data, but the World
+> Cup tabs need the API.
 
 ## CI
 

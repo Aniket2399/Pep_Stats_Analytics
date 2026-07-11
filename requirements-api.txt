@@ -1,0 +1,7 @@
+# Minimal deps for the read-only serving API (uvicorn apex.api.app:app).
+# The batch/scrape layers (statsbombpy, pandas, pyarrow, ScraperFC) are NOT
+# needed to serve the pre-built apex.duckdb, so they're omitted here to keep the
+# image small and the build fast. (Full deps live in requirements.txt.)
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+duckdb==1.1.3

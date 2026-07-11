@@ -88,9 +88,13 @@ yarn-error.log
 # macOS
 .DS_Store
 
-# Project data (raw StatsBomb parquet + duckdb, ~1.3GB — never commit)
-# Anchored to repo root so it does NOT ignore frontend/src/data (app source).
-/data/
+# Project data (raw StatsBomb parquet, ~1.3GB — never commit) — but DO keep the
+# small self-contained serving DB so the API is deployable. Anchored to root so
+# it never touches frontend/src/data (app source).
+/data/*
+!/data/serving/
+/data/serving/*
+!/data/serving/apex.duckdb
 dashboard/live.html
 dashboard/debug.html
 dashboard/original.html

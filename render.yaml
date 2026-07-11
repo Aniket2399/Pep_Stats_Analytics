@@ -1,0 +1,12 @@
+# Render Blueprint for the PepStats serving API.
+# In Render: New → Blueprint → pick this repo. It builds the Dockerfile and
+# deploys a web service with the serving DB baked in. CORS is already open, so
+# once it's live, set VITE_API_URL in Vercel to this service's URL.
+services:
+  - type: web
+    name: pepstats-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
