@@ -224,3 +224,5 @@
 .wc-update:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
 .wc-update:disabled{opacity:.65;cursor:default}
 .wc-update .wc-update-dot{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.75);animation:pulse 1.6s infinite}
+.update-error{margin-bottom:16px;padding:12px 14px;border-radius:9px;border:1px solid rgba(214,59,59,.45);background:rgba(214,59,59,.08);color:var(--ink);font-size:12.5px;line-height:1.5}
+.update-error strong{font-weight:800;margin-right:4px}

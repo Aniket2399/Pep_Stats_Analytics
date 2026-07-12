@@ -29,13 +29,21 @@ export default function App() {
   const [tab, setTab] = useState<string>('overview')
   const [club, setClub] = useState<string>('Barcelona')
   const [updating, setUpdating] = useState(false)
+  const [updateError, setUpdateError] = useState<string | null>(null)
   const { data, loading, error, reload } = useAsync(() => loadAppData(), [])
 
   const tabs = source === 'historic' ? HISTORIC_TABS : WC_TABS
   const pick = (s: Source) => { setSource(s); setTab(DEFAULT_TAB[s]) }
   const onUpdate = async () => {
     setUpdating(true)
-    try { await refreshLive() } finally { setUpdating(false); reload() }
+    setUpdateError(null)
+    try {
+      const res = await refreshLive()
+      if (!res.ok) setUpdateError(res.error ?? 'the refresh failed for an unknown reason')
+    } finally {
+      setUpdating(false)
+      reload()
+    }
   }
 
   const clubs = useMemo(() => (data ? data.historic.standings.map((r) => r.team) : []), [data])
@@ -91,6 +99,11 @@ export default function App() {
       </nav>
 
       <main className="wrap-main">
+        {source === 'wc' && updateError && (
+          <div className="update-error" data-testid="update-error" role="alert">
+            <strong>⚠ Couldn't update scores.</strong> The scores below are unchanged. {updateError}
+          </div>
+        )}
         {loading && <Loading />}
         {error && <ErrorState error={error} onRetry={reload} />}
         {data && data.source === 'sample' && <div className="sec-sub" style={{ marginBottom: 12 }}>⚠ Live data service unavailable — showing cached results.</div>}

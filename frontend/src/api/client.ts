@@ -34,14 +34,28 @@ export const getLiveFixtures = () => request<Fixture[]>('/api/live/fixtures')
 export const getLiveStandings = () => request<StandingRow[]>('/api/live/standings')
 export const getKnockout = () => request<LiveMatch[]>('/api/live/knockout')
 
-/** Trigger the backend to fetch the latest scores and rebuild the WC tables. */
-export async function refreshLive(): Promise<{ ok: boolean }> {
+export interface RefreshResult { ok: boolean; error?: string }
+
+/** The endpoint answers 200 with {ok:false, log|error} when the rebuild itself
+ *  fails, so a failure has to be read out of the body, not the status. */
+export async function refreshLive(): Promise<RefreshResult> {
+  let res: Response
   try {
-    const res = await fetch(`${API_BASE}/api/live/refresh`, { method: 'POST' })
-    return res.ok ? ((await res.json()) as { ok: boolean }) : { ok: false }
-  } catch {
-    return { ok: false }
+    res = await fetch(`${API_BASE}/api/live/refresh`, { method: 'POST' })
+  } catch (e) {
+    return { ok: false, error: `network error: ${(e as Error).message}` }
   }
+  if (!res.ok) return { ok: false, error: `HTTP ${res.status} from /api/live/refresh` }
+
+  const body = (await res.json()) as { ok?: boolean; log?: string; error?: string }
+  if (body.ok) return { ok: true }
+  return { ok: false, error: lastLine(body.error ?? body.log) ?? 'the refresh failed for an unknown reason' }
+}
+
+/** The backend's `log` is a whole traceback; its last line carries the actual cause. */
+function lastLine(text?: string): string | undefined {
+  const lines = (text ?? '').split('\n').map((l) => l.trim()).filter(Boolean)
+  return lines.length ? lines[lines.length - 1] : undefined
 }
 export const getMeta = () => request<Meta>('/api/meta')
 

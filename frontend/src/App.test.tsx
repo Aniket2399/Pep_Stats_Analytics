@@ -1,7 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import App from './App'
 import type { AppData } from './data/types'
+
+const refreshLive = vi.fn()
+vi.mock('./api/client', () => ({ refreshLive: (...a: unknown[]) => refreshLive(...a) }))
 
 vi.mock('./data/adapter', () => ({
   loadAppData: (): Promise<AppData> => Promise.resolve({
@@ -27,4 +31,29 @@ test('renders the PepStats shell with source toggle and tabs', () => {
 test('loads data and shows the historic overview club', async () => {
   const { getAllByText } = render(<App />)
   await waitFor(() => expect(getAllByText('Barcelona').length).toBeGreaterThan(0))
+})
+
+test('shows the reason when "Update scores" fails instead of silently spinning', async () => {
+  refreshLive.mockResolvedValue({ ok: false, error: "ModuleNotFoundError: No module named 'pandas'" })
+  const user = userEvent.setup()
+  render(<App />)
+
+  await user.click(screen.getByRole('button', { name: /World Cup 2026/ }))
+  await user.click(screen.getByRole('button', { name: /Update scores/ }))
+
+  const err = await screen.findByTestId('update-error')
+  expect(err).toHaveTextContent(/couldn't update/i)
+  expect(err).toHaveTextContent(/pandas/)
+})
+
+test('shows no error banner when "Update scores" succeeds', async () => {
+  refreshLive.mockResolvedValue({ ok: true })
+  const user = userEvent.setup()
+  render(<App />)
+
+  await user.click(screen.getByRole('button', { name: /World Cup 2026/ }))
+  await user.click(screen.getByRole('button', { name: /Update scores/ }))
+
+  await waitFor(() => expect(screen.getByRole('button', { name: /Update scores/ })).toBeEnabled())
+  expect(screen.queryByTestId('update-error')).not.toBeInTheDocument()
 })
