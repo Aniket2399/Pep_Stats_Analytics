@@ -106,10 +106,18 @@ def _mtime_iso(path):
                                                 tz=datetime.timezone.utc).isoformat()
     return None
 
-def meta():
+def meta(con=None):
+    """live_updated comes from the live_meta table, not a file mtime: the DB is the
+    only artifact the Docker image copies, so a mtime-based answer is null in prod."""
     from apex.live import config as live_config
+    live_updated = None
+    if con is not None and table_exists(con, "live_meta"):
+        row = con.execute("SELECT updated_at FROM live_meta LIMIT 1").fetchone()
+        live_updated = row[0] if row else None
+    if live_updated is None:                       # local dev / pre-live_meta DBs
+        live_updated = _mtime_iso(live_config.RAW_SNAPSHOT)
     return {
         "historic_updated": _mtime_iso(config.PLAYER_SEASON_PARQUET),
-        "live_updated": _mtime_iso(live_config.RAW_SNAPSHOT),
+        "live_updated": live_updated,
         "source": "apex.duckdb",
     }

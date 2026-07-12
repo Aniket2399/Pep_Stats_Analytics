@@ -19,3 +19,27 @@ def test_503_when_db_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DUCKDB_PATH", tmp_path / "gone.duckdb")
     r = client.get("/health")
     assert r.status_code == 503
+
+def test_meta_reports_live_updated_from_live_meta_table(apex_db):
+    import duckdb
+    con = duckdb.connect(str(apex_db))
+    con.execute("create table live_meta as select "
+                "'2026-07-12T10:00:00+00:00' as updated_at, 'live' as source")
+    con.close()
+
+    body = client.get("/api/meta").json()
+    assert body["live_updated"] == "2026-07-12T10:00:00+00:00"
+
+def test_meta_live_updated_is_null_without_the_table(apex_db, tmp_path, monkeypatch):
+    """Older DBs built before live_meta existed must not 500.
+
+    RAW_SNAPSHOT must be pointed at a path that does not exist: the mtime fallback
+    would otherwise read the real data/live/matches_raw.json, which Task 5's scrape
+    creates on a developer machine — passing in CI and failing locally.
+    """
+    from apex.live import config as live_config
+    monkeypatch.setattr(live_config, "RAW_SNAPSHOT", tmp_path / "absent.json")
+
+    body = client.get("/api/meta").json()
+    assert body["live_updated"] is None
+    assert body["source"] == "apex.duckdb"

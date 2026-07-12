@@ -21,8 +21,8 @@ def health(con=Depends(get_db)):
     return {"status": "ok", "tables": queries.table_counts(con)}
 
 @app.get("/api/meta")
-def meta():
-    return queries.meta()
+def meta(con=Depends(get_db)):
+    return queries.meta(con)
 
 # Routers (created as stubs in Step 4, fleshed out in Tasks 4 & 5):
 from .routers import historic, live   # noqa: E402
